@@ -10,6 +10,21 @@ end
 
 require "fileutils"
 
+# monkey patch for Rubygems 2.2
+class Gem::Ext::Builder
+  def gem_dir=(path)
+    @gem_dir = path
+  end
+end
+
+class Gem::Installer
+  def build_extensions(temp = nil)
+    builder = Gem::Ext::Builder.new spec, @build_args
+    builder.gem_dir = temp if temp
+    builder.build_extensions
+  end
+end
+
 class Gem::Compiler
   include Gem::UserInteraction
 
@@ -28,7 +43,7 @@ class Gem::Compiler
     unpack
 
     # build extensions
-    installer.build_extensions
+    installer.build_extensions target_dir
 
     # determine build artifacts from require_paths
     dlext    = RbConfig::CONFIG["DLEXT"]
@@ -47,6 +62,9 @@ class Gem::Compiler
       debug "Adding '#{file}' to gemspec"
       gemspec.files.push file
     end
+
+    # remove .c and .h files from the gemspec
+    gemspec.files.reject!{|file| file =~ /\.[ch]$/}
 
     # clear out extensions from gemspec
     gemspec.extensions.clear

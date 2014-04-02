@@ -64,7 +64,8 @@ class Gem::Compiler
     end
 
     # remove .c and .h files from the gemspec
-    gemspec.files.reject!{|file| file =~ /\.[ch]$/}
+    gemspec.files.reject!{|file| file =~ /\.c$/}
+    gemspec.files.reject!{|file| file =~ /\.h$/}
 
     # clear out extensions from gemspec
     gemspec.extensions.clear

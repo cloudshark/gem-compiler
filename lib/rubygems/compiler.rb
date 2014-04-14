@@ -10,21 +10,6 @@ end
 
 require "fileutils"
 
-# monkey patch for Rubygems 2.2
-class Gem::Ext::Builder
-  def gem_dir=(path)
-    @gem_dir = path
-  end
-end
-
-class Gem::Installer
-  def build_extensions(temp = nil)
-    builder = Gem::Ext::Builder.new spec, @build_args
-    builder.gem_dir = temp if temp
-    builder.build_extensions
-  end
-end
-
 class Gem::Compiler
   include Gem::UserInteraction
 
@@ -43,7 +28,7 @@ class Gem::Compiler
     unpack
 
     # build extensions
-    installer.build_extensions target_dir
+    installer.build_extensions 
 
     # determine build artifacts from require_paths
     dlext    = RbConfig::CONFIG["DLEXT"]
@@ -112,6 +97,8 @@ class Gem::Compiler
     return @installer if @installer
 
     @installer = Gem::Installer.new(@gemfile, options.dup.merge(:unpack => true))
+    @installer.spec.full_gem_path = target_dir
+    @installer.spec.extension_dir = File.join target_dir, 'lib'
 
     # Hmm, gem already compiled?
     if @installer.spec.platform != Gem::Platform::RUBY
